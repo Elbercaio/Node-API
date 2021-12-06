@@ -4,30 +4,43 @@ const mysql = require("../mysql").pool;
 
 router.get("/", (req, res, next) => {
   mysql.getConnection((error, conn) => {
-    conn.query("SELECT * FROM orders", (error, result, field) => {
-      conn.release();
-      if (error) {
-        return res.status(500).send({
-          error: error,
-        });
+    conn.query(
+      `SELECT orders.order_id, 
+              orders.quantity, 
+              products.product_id, 
+              products.name, 
+              products.price
+      FROM orders INNER JOIN products
+      ON products.product_id = orders.product_id;`,
+      (error, result, field) => {
+        conn.release();
+        if (error) {
+          return res.status(500).send({
+            error: error,
+          });
+        }
+        const response = {
+          orders: result.map((order) => {
+            return {
+              order_id: order.order_id,
+              quantity: order.quantity,
+              product: {
+                product_id: order.product_id,
+                name: order.name,
+                price: order.price,
+              },
+              product_id: order.product_id,
+              request: {
+                method: "GET",
+                description: "GET an order",
+                url: `http://${process.env.HOST}:${process.env.PORT}/orders/${order.order_id}`,
+              },
+            };
+          }),
+        };
+        return res.status(200).send(response);
       }
-      const response = {
-        quantity: result.length,
-        orders: result.map((order) => {
-          return {
-            order_id: order.order_id,
-            quantity: order.quantity,
-            id_product: order.id_product,
-            request: {
-              method: "GET",
-              description: "GET an order",
-              url: `http://${process.env.HOST}:${process.env.PORT}/orders/${order.order_id}`,
-            },
-          };
-        }),
-      };
-      return res.status(200).send(response);
-    });
+    );
   });
 });
 
@@ -52,7 +65,7 @@ router.get("/:order_id", (req, res, next) => {
           order: {
             order_id: result[0].order_id,
             quantity: result[0].quantity,
-            id_product: result[0].id_product,
+            product_id: result[0].product_id,
             request: {
               method: "GET",
               description: "GET all orders",
@@ -88,7 +101,7 @@ router.post("/", (req, res, next) => {
           });
         }
         conn.query(
-          "INSERT INTO orders (quantity, id_product) VALUES (?, ?)",
+          "INSERT INTO orders (quantity, product_id) VALUES (?, ?)",
           [req.body.quantity, req.body.product_id],
           (error, result, field) => {
             conn.release();
@@ -102,7 +115,7 @@ router.post("/", (req, res, next) => {
               createdOrder: {
                 order_id: result.insertId,
                 quantity: req.body.quantity,
-                id_product: req.body.product_id,
+                product_id: req.body.product_id,
                 request: {
                   method: "GET",
                   description: "GET all orders",
@@ -143,7 +156,7 @@ router.delete("/:order_id", (req, res, next) => {
             url: `http://${process.env.HOST}:${process.env.PORT}/orders`,
             body: {
               quantity: "Number",
-              id_product: "Number",
+              product_id: "Number",
             },
           },
         };

@@ -1,11 +1,40 @@
 const express = require("express");
 const router = express.Router();
 const mysql = require("../mysql").pool;
+const multer = require("multer");
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "./uploads");
+  },
+  filename: function (req, file, cb) {
+    let data = new Date().toISOString().replace(/:/g, "-") + "-";
+    cb(null, data + file.originalname);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype == "image/jpeg" ||
+    file.mimetype == "image/jpg" ||
+    file.mimetype == "image/png"
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: { fieldSize: 1024 * 1024 * 5 },
+  fileFilter: fileFilter,
+});
 
 router.get("/", (req, res, next) => {
   mysql.getConnection((error, conn) => {
     conn.query(
-      "SELECT product_id, name, price FROM products",
+      "SELECT product_id, name, price, product_image FROM products",
       (error, result, field) => {
         conn.release();
         if (error) {
@@ -13,6 +42,7 @@ router.get("/", (req, res, next) => {
             error: error,
           });
         }
+        let link = `http://${process.env.HOST}:${process.env.PORT}/`;
         const response = {
           quantity: result.length,
           products: result.map((prod) => {
@@ -20,10 +50,11 @@ router.get("/", (req, res, next) => {
               product_id: prod.product_id,
               name: prod.name,
               price: prod.price,
+              product_image: `${link}${prod.product_image}`,
               request: {
                 method: "GET",
                 description: "GET a product",
-                url: `http://${process.env.HOST}:${process.env.PORT}/products/${prod.product_id}`,
+                url: `${link}/products/${prod.product_id}`,
               },
             };
           }),
@@ -37,7 +68,7 @@ router.get("/", (req, res, next) => {
 router.get("/:product_id", (req, res, next) => {
   mysql.getConnection((error, conn) => {
     conn.query(
-      "SELECT product_id, name, price FROM products WHERE product_id=?",
+      "SELECT product_id, name, price, product_image FROM products WHERE product_id=?",
       req.params.product_id,
       (error, result, field) => {
         conn.release();
@@ -51,15 +82,17 @@ router.get("/:product_id", (req, res, next) => {
             message: "404 - Product not found",
           });
         }
+        let link = `http://${process.env.HOST}:${process.env.PORT}/`;
         const response = {
           product: {
             product_id: result[0].product_id,
             name: result[0].name,
             price: result[0].price,
+            product_image: `${link}${result[0].product_image}`,
             request: {
               method: "GET",
               description: "GET all products",
-              url: `http://${process.env.HOST}:${process.env.PORT}/products`,
+              url: `${link}/products`,
             },
           },
         };
@@ -69,11 +102,12 @@ router.get("/:product_id", (req, res, next) => {
   });
 });
 
-router.post("/", (req, res, next) => {
+router.post("/", upload.single("product_image"), (req, res, next) => {
   mysql.getConnection((error, conn) => {
+    let image = req.file.path != null ? req.file.path.replace("\\", "/") : null;
     conn.query(
-      "INSERT INTO products (name, price) VALUES (?, ?)",
-      [req.body.name, req.body.price],
+      "INSERT INTO products (name, price, product_image) VALUES (?, ?, ?)",
+      [req.body.name, req.body.price, image],
       (error, result, field) => {
         conn.release();
         if (error) {
@@ -81,16 +115,19 @@ router.post("/", (req, res, next) => {
             error: error,
           });
         }
+        let link = `http://${process.env.HOST}:${process.env.PORT}/`;
+
         const response = {
           message: "Product successfully created",
           createdProduct: {
             product_id: result.insertId,
             name: req.body.name,
             price: req.body.price,
+            product_image: `${link}${image}`,
             request: {
               method: "GET",
               description: "GET all products",
-              url: `http://${process.env.HOST}:${process.env.PORT}/products`,
+              url: `${link}/products`,
             },
           },
         };

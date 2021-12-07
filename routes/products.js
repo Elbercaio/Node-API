@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const mysql = require("../mysql").pool;
+const login = require("../middleware/login");
 
 const multer = require("multer");
 
@@ -113,47 +114,53 @@ router.get("/:product_id", (req, res, next) => {
   });
 });
 
-router.post("/", upload.single("product_image"), (req, res, next) => {
-  mysql.getConnection((error, conn) => {
-    if (error) {
-      return res.status(500).send({
-        error: error,
-      });
-    }
-    let image = req.file.path != null ? req.file.path.replace("\\", "/") : null;
-    conn.query(
-      "INSERT INTO products (name, price, product_image) VALUES (?, ?, ?)",
-      [req.body.name, req.body.price, image],
-      (error, result, field) => {
-        conn.release();
-        if (error) {
-          return res.status(500).send({
-            error: error,
-          });
-        }
-        let link = `http://${process.env.HOST}:${process.env.PORT}/`;
-
-        const response = {
-          message: "Product created successfully",
-          createdProduct: {
-            product_id: result.insertId,
-            name: req.body.name,
-            price: req.body.price,
-            product_image: `${link}${image}`,
-            request: {
-              method: "GET",
-              description: "GET all products",
-              url: `${link}/products`,
-            },
-          },
-        };
-        return res.status(201).send(response);
+router.post(
+  "/",
+  login.required,
+  upload.single("product_image"),
+  (req, res, next) => {
+    mysql.getConnection((error, conn) => {
+      if (error) {
+        return res.status(500).send({
+          error: error,
+        });
       }
-    );
-  });
-});
+      let image =
+        req.file.path != null ? req.file.path.replace("\\", "/") : null;
+      conn.query(
+        "INSERT INTO products (name, price, product_image) VALUES (?, ?, ?)",
+        [req.body.name, req.body.price, image],
+        (error, result, field) => {
+          conn.release();
+          if (error) {
+            return res.status(500).send({
+              error: error,
+            });
+          }
+          let link = `http://${process.env.HOST}:${process.env.PORT}/`;
 
-router.patch("/:product_id", (req, res, next) => {
+          const response = {
+            message: "Product created successfully",
+            createdProduct: {
+              product_id: result.insertId,
+              name: req.body.name,
+              price: req.body.price,
+              product_image: `${link}${image}`,
+              request: {
+                method: "GET",
+                description: "GET all products",
+                url: `${link}/products`,
+              },
+            },
+          };
+          return res.status(201).send(response);
+        }
+      );
+    });
+  }
+);
+
+router.patch("/:product_id", login.required, (req, res, next) => {
   mysql.getConnection((error, conn) => {
     if (error) {
       return res.status(500).send({
@@ -197,7 +204,7 @@ router.patch("/:product_id", (req, res, next) => {
   });
 });
 
-router.delete("/:product_id", (req, res, next) => {
+router.delete("/:product_id", login.required, (req, res, next) => {
   mysql.getConnection((error, conn) => {
     if (error) {
       return res.status(500).send({

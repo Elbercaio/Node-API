@@ -7,6 +7,8 @@
     "DB_PORT": 3306,
     "DB_DATABASE": "ecommerce",
     "DB_USER": "root",
-    "DB_PASSWORD": "root"
+    "DB_PASSWORD": "root",
+
+    "SECRET_KEY": "secret_key"
   }
 }

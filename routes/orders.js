@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const mysql = require("../mysql").pool;
+const login = require("../middleware/login");
 
 router.get("/", (req, res, next) => {
   mysql.getConnection((error, conn) => {
@@ -106,7 +107,7 @@ router.get("/:order_id", (req, res, next) => {
   });
 });
 
-router.post("/", (req, res, next) => {
+router.post("/", login.required, (req, res, next) => {
   mysql.getConnection((error, conn) => {
     if (error) {
       return res.status(500).send({
@@ -131,7 +132,7 @@ router.post("/", (req, res, next) => {
               return res.status(500).send({
                 error: error,
               });
-            }  
+            }
             const response = {
               message: "Order successfully created",
               createdOrder: {
@@ -153,7 +154,7 @@ router.post("/", (req, res, next) => {
   });
 });
 
-router.delete("/:order_id", (req, res, next) => {
+router.delete("/:order_id", login.required, (req, res, next) => {
   mysql.getConnection((error, conn) => {
     if (error) {
       return res.status(500).send({

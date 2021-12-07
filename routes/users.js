@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const mysql = require("../mysql").pool;
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 router.post("/signup", (req, res, next) => {
   mysql.getConnection((error, conn) => {
@@ -20,7 +21,7 @@ router.post("/signup", (req, res, next) => {
           });
         }
         if (result.length > 0) {
-          return res.status(401).send({
+          return res.status(409).send({
             message: "409 - User already exists",
           });
         }
@@ -53,4 +54,63 @@ router.post("/signup", (req, res, next) => {
     );
   });
 });
+
+router.post("/signin", (req, res, next) => {
+  mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({
+        error: error,
+      });
+    }
+    conn.query(
+      "SELECT * FROM users WHERE email=?",
+      req.body.email,
+      (error, result, field) => {
+        conn.release();
+        if (error) {
+          return res.status(500).send({
+            error: error,
+          });
+        }
+        if (result.length == 0) {
+          return res.status(401).send({
+            message: "401 - Authentication failure",
+          });
+        }
+        bcrypt.compare(
+          req.body.password,
+          result[0].password,
+          (errBcrypt, authentication) => {
+            if (errBcrypt) {
+              return res.status(401).send({
+                error: errBcrypt,
+                message: "401 - Authentication failure",
+              });
+            }
+            if (authentication) {
+              let token = jwt.sign(
+                {
+                  user_id: result[0].user_id,
+                  email: result[0].email,
+                },
+                process.env.SECRET_KEY,
+                {
+                  expiresIn: "1h",
+                }
+              );
+              return res.status(200).send({
+                message: "200 - Successful authentication",
+                token: token,
+              });
+            }
+            return res.status(401).send({
+              message: "401 - Authentication failure",
+            });
+          }
+        );
+      }
+    );
+  });
+});
+
 module.exports = router;

@@ -20,7 +20,11 @@ router.get("/", (req, res, next) => {
       ON products.product_id = orders.product_id;`,
       (error, result, field) => {
         conn.release();
-
+        if (error) {
+          return res.status(500).send({
+            error: error,
+          });
+        }
         const response = {
           orders: result.map((order) => {
             let link = `http://${process.env.HOST}:${process.env.PORT}/`;
@@ -67,7 +71,11 @@ router.get("/:order_id", (req, res, next) => {
       req.params.order_id,
       (error, result, field) => {
         conn.release();
-
+        if (error) {
+          return res.status(500).send({
+            error: error,
+          });
+        }
         if (result.length == 0) {
           return res.status(404).send({
             message: "404 - Product not found",
@@ -119,7 +127,11 @@ router.post("/", (req, res, next) => {
           [req.body.quantity, req.body.product_id],
           (error, result, field) => {
             conn.release();
-
+            if (error) {
+              return res.status(500).send({
+                error: error,
+              });
+            }  
             const response = {
               message: "Order successfully created",
               createdOrder: {
@@ -153,14 +165,18 @@ router.delete("/:order_id", (req, res, next) => {
       req.params.order_id,
       (error, result, field) => {
         conn.release();
-
+        if (error) {
+          return res.status(500).send({
+            error: error,
+          });
+        }
         if (result.affectedRows == 0) {
           return res.status(404).send({
             message: "404 - Product not found",
           });
         }
         const response = {
-          message: "Order successfully deleted",
+          message: "Order deleted successfully",
           request: {
             method: "POST",
             description: "POST an order",

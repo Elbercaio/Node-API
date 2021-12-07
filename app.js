@@ -1,8 +1,10 @@
 const express = require("express");
-const productsRouter = require("./routes/products");
-const ordersRouter = require("./routes/orders");
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
+
+const productsRouter = require("./routes/products");
+const ordersRouter = require("./routes/orders");
+const usersRouter = require("./routes/users");
 
 const app = express();
 
@@ -27,6 +29,7 @@ app.use((req, res, next) => {
 
 app.use("/products", productsRouter);
 app.use("/orders", ordersRouter);
+app.use("/users", usersRouter);
 
 app.use((req, res, next) => {
   const error = new Error("404 - Not Found");

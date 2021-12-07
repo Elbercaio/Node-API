@@ -43,6 +43,11 @@ router.get("/", (req, res, next) => {
       "SELECT product_id, name, price, product_image FROM products",
       (error, result, field) => {
         conn.release();
+        if (error) {
+          return res.status(500).send({
+            error: error,
+          });
+        }
         let link = `http://${process.env.HOST}:${process.env.PORT}/`;
         const response = {
           quantity: result.length,
@@ -78,6 +83,11 @@ router.get("/:product_id", (req, res, next) => {
       req.params.product_id,
       (error, result, field) => {
         conn.release();
+        if (error) {
+          return res.status(500).send({
+            error: error,
+          });
+        }
         if (result.length == 0) {
           return res.status(404).send({
             message: "404 - Product not found",
@@ -116,10 +126,15 @@ router.post("/", upload.single("product_image"), (req, res, next) => {
       [req.body.name, req.body.price, image],
       (error, result, field) => {
         conn.release();
+        if (error) {
+          return res.status(500).send({
+            error: error,
+          });
+        }
         let link = `http://${process.env.HOST}:${process.env.PORT}/`;
 
         const response = {
-          message: "Product successfully created",
+          message: "Product created successfully",
           createdProduct: {
             product_id: result.insertId,
             name: req.body.name,
@@ -153,13 +168,18 @@ router.patch("/:product_id", (req, res, next) => {
       [req.body.name, req.body.price, req.params.product_id],
       (error, result, field) => {
         conn.release();
+        if (error) {
+          return res.status(500).send({
+            error: error,
+          });
+        }
         if (result.affectedRows == 0) {
           return res.status(404).send({
             message: "404 - Product not found",
           });
         }
         const response = {
-          message: "Product successfully updated",
+          message: "Product updated successfully",
           updatedProduct: {
             product_id: req.params.product_id,
             name: req.body.name,
@@ -189,13 +209,18 @@ router.delete("/:product_id", (req, res, next) => {
       req.params.product_id,
       (error, result, field) => {
         conn.release();
+        if (error) {
+          return res.status(500).send({
+            error: error,
+          });
+        }
         if (result.affectedRows == 0) {
           return res.status(404).send({
             message: "404 - Product not found",
           });
         }
         const response = {
-          message: "Product successfully deleted",
+          message: "Product deleted successfully",
           request: {
             method: "POST",
             description: "POST a product",

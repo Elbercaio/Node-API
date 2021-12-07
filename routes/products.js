@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const mysql = require("../mysql").pool;
+
 const multer = require("multer");
 
 const storage = multer.diskStorage({
@@ -33,15 +34,15 @@ const upload = multer({
 
 router.get("/", (req, res, next) => {
   mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({
+        error: error,
+      });
+    }
     conn.query(
       "SELECT product_id, name, price, product_image FROM products",
       (error, result, field) => {
         conn.release();
-        if (error) {
-          return res.status(500).send({
-            error: error,
-          });
-        }
         let link = `http://${process.env.HOST}:${process.env.PORT}/`;
         const response = {
           quantity: result.length,
@@ -67,16 +68,16 @@ router.get("/", (req, res, next) => {
 
 router.get("/:product_id", (req, res, next) => {
   mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({
+        error: error,
+      });
+    }
     conn.query(
       "SELECT product_id, name, price, product_image FROM products WHERE product_id=?",
       req.params.product_id,
       (error, result, field) => {
         conn.release();
-        if (error) {
-          return res.status(500).send({
-            error: error,
-          });
-        }
         if (result.length == 0) {
           return res.status(404).send({
             message: "404 - Product not found",
@@ -104,17 +105,17 @@ router.get("/:product_id", (req, res, next) => {
 
 router.post("/", upload.single("product_image"), (req, res, next) => {
   mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({
+        error: error,
+      });
+    }
     let image = req.file.path != null ? req.file.path.replace("\\", "/") : null;
     conn.query(
       "INSERT INTO products (name, price, product_image) VALUES (?, ?, ?)",
       [req.body.name, req.body.price, image],
       (error, result, field) => {
         conn.release();
-        if (error) {
-          return res.status(500).send({
-            error: error,
-          });
-        }
         let link = `http://${process.env.HOST}:${process.env.PORT}/`;
 
         const response = {
@@ -139,6 +140,11 @@ router.post("/", upload.single("product_image"), (req, res, next) => {
 
 router.patch("/:product_id", (req, res, next) => {
   mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({
+        error: error,
+      });
+    }
     conn.query(
       `UPDATE products
         SET name = ?,
@@ -147,12 +153,7 @@ router.patch("/:product_id", (req, res, next) => {
       [req.body.name, req.body.price, req.params.product_id],
       (error, result, field) => {
         conn.release();
-        if (error) {
-          return res.status(500).send({
-            error: error,
-          });
-        }
-        if (result.length == 0) {
+        if (result.affectedRows == 0) {
           return res.status(404).send({
             message: "404 - Product not found",
           });
@@ -178,17 +179,17 @@ router.patch("/:product_id", (req, res, next) => {
 
 router.delete("/:product_id", (req, res, next) => {
   mysql.getConnection((error, conn) => {
+    if (error) {
+      return res.status(500).send({
+        error: error,
+      });
+    }
     conn.query(
       `DELETE FROM products WHERE product_id = ?`,
       req.params.product_id,
       (error, result, field) => {
         conn.release();
-        if (error) {
-          return res.status(500).send({
-            error: error,
-          });
-        }
-        if (result.length == 0) {
+        if (result.affectedRows == 0) {
           return res.status(404).send({
             message: "404 - Product not found",
           });

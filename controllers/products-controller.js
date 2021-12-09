@@ -5,7 +5,6 @@ exports.getProducts = async (req, res, next) => {
     const query =
       "SELECT product_id, name, price, product_image FROM products;";
     const result = await mysql.execute(query);
-    let link = `http://${process.env.HOST}:${process.env.PORT}/`;
     const response = {
       quantity: result.length,
       products: result.map((prod) => {
@@ -13,11 +12,11 @@ exports.getProducts = async (req, res, next) => {
           product_id: prod.product_id,
           name: prod.name,
           price: prod.price,
-          product_image: `${link}${prod.product_image}`,
+          product_image: `${process.env.URL_API}${prod.product_image}`,
           request: {
             method: "GET",
             description: "GET a product",
-            url: `${link}/products/${prod.product_id}`,
+            url: `${process.env.URL_API}/products/${prod.product_id}`,
           },
         };
       }),
@@ -38,17 +37,16 @@ exports.getProductById = async (req, res, next) => {
         message: "404 - Product not found",
       });
     }
-    let link = `http://${process.env.HOST}:${process.env.PORT}/`;
     const response = {
       product: {
         product_id: result[0].product_id,
         name: result[0].name,
         price: result[0].price,
-        product_image: `${link}${result[0].product_image}`,
+        product_image: `${process.env.URL_API}${result[0].product_image}`,
         request: {
           method: "GET",
           description: "GET all products",
-          url: `${link}/products`,
+          url: `${process.env.URL_API}/products`,
         },
       },
     };
@@ -69,18 +67,17 @@ exports.postProduct = async (req, res, next) => {
       req.body.price,
       image,
     ]);
-    let link = `http://${process.env.HOST}:${process.env.PORT}/`;
     const response = {
       message: "Product created successfully",
       createdProduct: {
         product_id: result.insertId,
         name: req.body.name,
         price: parseFloat(req.body.price),
-        product_image: `${link}${image}`,
+        product_image: `${process.env.URL_API}${image}`,
         request: {
           method: "GET",
           description: "GET all products",
-          url: `${link}/products`,
+          url: `${process.env.URL_API}/products`,
         },
       },
     };
@@ -151,3 +148,4 @@ exports.deleteProduct = async (req, res, next) => {
     return res.status(500).send({ error: error });
   }
 };
+

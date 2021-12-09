@@ -13,7 +13,6 @@ exports.getOrders = async (req, res, next) => {
     const result = await mysql.execute(query);
     const response = {
       orders: result.map((order) => {
-        let link = `http://${process.env.HOST}:${process.env.PORT}/`;
         return {
           order_id: order.order_id,
           quantity: order.quantity,
@@ -21,12 +20,12 @@ exports.getOrders = async (req, res, next) => {
             product_id: order.product_id,
             name: order.name,
             price: order.price,
-            product_image: `${link}${order.product_image}`,
+            product_image: `${process.env.URL_API}${order.product_image}`,
           },
           request: {
             method: "GET",
             description: "GET an order",
-            url: `${link}/orders/${order.order_id}`,
+            url: `${process.env.URL_API}/orders/${order.order_id}`,
           },
         };
       }),
@@ -53,7 +52,6 @@ exports.getOrderById = async (req, res, next) => {
         message: "404 - Product not found",
       });
     }
-    let link = `http://${process.env.HOST}:${process.env.PORT}/`;
 
     const response = {
       order: {
@@ -63,7 +61,7 @@ exports.getOrderById = async (req, res, next) => {
           product_id: result[0].product_id,
           name: result[0].name,
           price: result[0].price,
-          product_image: `${link}${result[0].product_image}`,
+          product_image: `${process.env.URL_API}${result[0].product_image}`,
         },
         request: {
           method: "GET",

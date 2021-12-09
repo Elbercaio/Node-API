@@ -9,6 +9,8 @@
     "DB_USER": "root",
     "DB_PASSWORD": "root",
 
+    "URL_API": "http://localhost:3000/",
+
     "SECRET_KEY": "secret_key"
   }
 }

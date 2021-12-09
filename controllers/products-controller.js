@@ -61,11 +61,13 @@ exports.postProduct = async (req, res, next) => {
     const image =
       req.file.path != null ? req.file.path.replace("\\", "/") : null;
     const query =
-      "INSERT INTO products (name, price, product_image) VALUES (?, ?, ?);";
+      `INSERT INTO products (name, price, product_image, category_id)
+       VALUES (?, ?, ?, ?);`;
     const result = await mysql.execute(query, [
       req.body.name,
       req.body.price,
       image,
+      req.body.category_id,
     ]);
     const response = {
       message: "Product created successfully",

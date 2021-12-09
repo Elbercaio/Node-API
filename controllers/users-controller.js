@@ -4,18 +4,7 @@ const jwt = require("jsonwebtoken");
 
 exports.signup = async (req, res, next) => {
   try {
-    let query = "SELECT * FROM users WHERE email=?;";
-    let result = await mysql.execute(query, [req.body.email]);
-    if (result.length > 0) {
-      return res.status(409).send({
-        message: "409 - User already exists",
-      });
-    }
-    bcrypt.hash(req.body.password, 10, (errBcrypt, hash) => {
-      if (errBcrypt) {
-        return res.status(500).send({ error: errBcrypt });
-      }
-    });
+    hash = bcrypt.hashSync(req.body.password, 10);
     query = "INSERT INTO users (email, password) VALUES (?, ?);";
     result = await mysql.execute(query, [req.body.email, hash]);
     const response = {

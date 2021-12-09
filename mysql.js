@@ -9,4 +9,14 @@ var pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
 });
 
-exports.pool = pool;
+exports.execute = (query, params = []) => {
+  return new Promise((resolve, reject) => {
+    pool.query(query, params, (error, result, fields) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+};
